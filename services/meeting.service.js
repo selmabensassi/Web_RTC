@@ -22,18 +22,27 @@ async function startMeeting(params, callback) {
 
 async function joinMeeting(params, callback) {
     try {
-        const meetingUserModel = new MeetingUser(params);
-        const savedUser = await meetingUserModel.save();
-        const updatedMeeting = await Meeting.findOneAndUpdate(
-            { _id: params.meetingId },
-            { $addToSet: { meetingUsers: savedUser._id } },
-            { new: true }
-        );
-        callback(null, savedUser);
+        checkMeetingExists(params.meetingId, async (error, meeting) => {
+            if (error) {
+                callback(error);
+            } else if (meeting) {
+                const meetingUserModel = new MeetingUser(params);
+                const savedUser = await meetingUserModel.save();
+                const updatedMeeting = await Meeting.findByIdAndUpdate(
+                    params.meetingId,
+                    { $addToSet: { meetingUsers: savedUser._id } },
+                    { new: true }
+                );
+                callback(null, savedUser);
+            } else {
+                callback('Meeting not found');
+            }
+        });
     } catch (error) {
         callback(error);
     }
 }
+
 
 async function isMeetingPresent(meetingId, callback) {
     try {
@@ -79,16 +88,17 @@ async function getUserBySocketId(params, callback) {
 }
 async function checkMeetingExists(meetingId, callback) {
     try {
-        const meeting = await Meeting.findById(meetingId).populate("meetingUsers", "MeetingUser");
+        const meeting = await Meeting.findById(meetingId);
         if (!meeting) {
-            callback("Meeting not found");
+            callback("Meeting not found", null);
         } else {
-            callback(null, meeting);
+            callback(null, meeting); // Return the meeting object if found
         }
     } catch (error) {
-        callback(error);
+        callback(error, null);
     }
 }
+
 
 module.exports = {
     startMeeting,

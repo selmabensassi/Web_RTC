@@ -6,7 +6,7 @@ exports.checkMeetingExists = (req, res, next) => {
     
     meetingServices.checkMeetingExists(meetingId, (error, results) => {
         if (error) {
-            return next(error); // Pass the error to the error handler middleware
+            return next(error); 
         }
         return res.status(200).json({
             message: "Meeting found",
